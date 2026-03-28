@@ -14,24 +14,20 @@ function getConnectionInfo(uri) {
   let type = 'Unknown';
   let dbName = '';
 
-  // Check if URI exists
   if (!uri) {
     return { type: 'Not configured', dbName: '' };
   }
 
-  // Detect connection type
   if (uri.includes('mongodb.net')) {
     type = 'Atlas';
   } else if (uri.includes('localhost') || uri.includes('127.0.0.1')) {
     type = 'Localhost';
   }
 
-  // Extract database name from URI
   try {
     const url = new URL(uri);
     dbName = url.pathname.substring(1).split('?')[0];
   } catch (e) {
-    // Fallback parsing if URL constructor fails
     const parts = uri.split('/');
     let last = parts[parts.length - 1];
     if (last.includes('?')) last = last.split('?')[0];
@@ -49,16 +45,7 @@ const connectSchool = async () => {
   }
   const info = getConnectionInfo(uri);
   console.log(`🔌 Connecting to School database (${info.type}: ${info.dbName})...`);
-  schoolConnection = await mongoose.createConnection(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
-  
-  // Wait for connection to be fully established
-  await new Promise((resolve) => {
-    schoolConnection.once('connected', resolve);
-  });
-  
+  schoolConnection = await mongoose.createConnection(uri);
   console.log(`✅ Connected to School database (${info.type}: ${info.dbName})`);
   return schoolConnection;
 };
@@ -71,16 +58,7 @@ const connectCyber = async () => {
   }
   const info = getConnectionInfo(uri);
   console.log(`🔌 Connecting to Cyber database (${info.type}: ${info.dbName})...`);
-  cyberConnection = await mongoose.createConnection(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
-  
-  // Wait for connection to be fully established
-  await new Promise((resolve) => {
-    cyberConnection.once('connected', resolve);
-  });
-  
+  cyberConnection = await mongoose.createConnection(uri);
   console.log(`✅ Connected to Cyber database (${info.type}: ${info.dbName})`);
   return cyberConnection;
 };
