@@ -9,19 +9,31 @@ const dotenv = require('dotenv');
 const path = require('path');
 const { connectSchool, connectCyber } = require('./config/db');
 
+// Load environment variables
 dotenv.config();
 
 const app = express();
 
-// CORS configuration – allow origins from environment or default to localhost + production domains
+// Determine environment - check both NODE_ENV and ENVIRONMENT
+const isProduction = process.env.NODE_ENV === 'production' || process.env.ENVIRONMENT === 'PRODUCTION';
+const PORT = process.env.PORT || 5000;
+const BASE_URL = process.env.BASE_URL || (isProduction ? 'https://hdmserver.pxxl.click' : `http://localhost:${PORT}`);
+
+// CORS configuration – read from environment or use defaults
 const defaultOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
   'http://127.0.0.1:3000',
-  'http://127.0.0.1:3001',
-  'https://hdmcompschool.pxxl.click',
-  'https://hdmcyber.pxxl.click'
+  'http://127.0.0.1:3001'
 ];
+
+// Add production domains if in production
+if (isProduction) {
+  defaultOrigins.push(
+    'https://hdmcompschool.pxxl.click',
+    'https://hdmcyber.pxxl.click'
+  );
+}
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
@@ -53,7 +65,11 @@ app.get('/health', (req, res) => {
     service: 'HDM System Backend',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'PRODUCTION'
+    environment: isProduction ? 'production' : 'development',
+    port: PORT,
+    baseUrl: BASE_URL,
+    schoolBaseUrl: process.env.SCHOOL_BASE_URL,
+    cyberBaseUrl: process.env.CYBER_BASE_URL
   });
 });
 
@@ -62,6 +78,7 @@ app.get('/', (req, res) => {
   res.json({
     message: 'HDM System Running',
     version: '1.0.0',
+    environment: isProduction ? 'production' : 'development',
     systems: {
       school: '/api/school',
       cyber: '/api/cyber'
@@ -75,6 +92,7 @@ app.get('/', (req, res) => {
 app.get('/api', (req, res) => {
   res.json({
     message: 'HDM API Gateway',
+    environment: isProduction ? 'production' : 'development',
     systems: {
       school: {
         base: '/api/school',
@@ -178,20 +196,18 @@ const startServer = async () => {
     console.error('Server error:', err.stack);
     res.status(500).json({
       error: 'Internal Server Error',
-      message: process.env.NODE_ENV === 'production' ? 'An error occurred' : err.message
+      message: isProduction ? 'An error occurred' : err.message
     });
   });
 
-  const PORT = process.env.PORT || 5000;
-  const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
-
   app.listen(PORT, () => {
     console.log(`\n🚀 HDM System Backend running on port ${PORT}`);
-    console.log(`   Environment: ${process.env.NODE_ENV || 'production'}`);
-    console.log(`   Root: ${BASE_URL}/`);
+    console.log(`   Environment: ${isProduction ? 'PRODUCTION' : 'development'}`);
+    console.log(`   Base URL: ${BASE_URL}`);
     console.log(`   Health: ${BASE_URL}/health`);
     console.log(`   School API: ${BASE_URL}/api/school`);
     console.log(`   Cyber API: ${BASE_URL}/api/cyber`);
+    console.log(`   CORS Origins: ${allowedOrigins.join(', ')}`);
   });
 };
 
