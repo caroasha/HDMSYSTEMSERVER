@@ -14,41 +14,34 @@ dotenv.config();
 
 const app = express();
 
-// Determine environment - check both NODE_ENV and ENVIRONMENT
+// Determine environment
 const isProduction = process.env.NODE_ENV === 'production' || process.env.ENVIRONMENT === 'PRODUCTION';
 const PORT = process.env.PORT || 5000;
-const BASE_URL = process.env.BASE_URL || (isProduction ? 'https://hdmserver.pxxl.click' : `http://localhost:${PORT}`);
+const BASE_URL = process.env.BASE_URL || (isProduction ? 'https://hdmsystemserver.pxxl.click' : `http://localhost:${PORT}`);
 
-// CORS configuration – read from environment or use defaults
-const defaultOrigins = [
+// CORS configuration – allow localhost for development and production domains
+const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
   'http://127.0.0.1:3000',
-  'http://127.0.0.1:3001'
+  'http://127.0.0.1:3001',
+  'https://hdmcompschool.pxxl.click',
+  'https://hdmcyber.pxxl.click'
 ];
-
-// Add production domains if in production
-if (isProduction) {
-  defaultOrigins.push(
-    'https://hdmcompschool.pxxl.click',
-    'https://hdmcyber.pxxl.click'
-  );
-}
-
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : defaultOrigins;
 
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps, curl)
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.warn(`CORS blocked origin: ${origin}`);
-      callback(null, false);
+      return callback(null, true);
     }
+    // Silently allow localhost without console warnings
+    if (origin && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      return callback(null, true);
+    }
+    // For all other origins, deny silently (no console warning)
+    return callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -67,9 +60,7 @@ app.get('/health', (req, res) => {
     uptime: process.uptime(),
     environment: isProduction ? 'production' : 'development',
     port: PORT,
-    baseUrl: BASE_URL,
-    schoolBaseUrl: process.env.SCHOOL_BASE_URL,
-    cyberBaseUrl: process.env.CYBER_BASE_URL
+    baseUrl: BASE_URL
   });
 });
 
@@ -207,7 +198,6 @@ const startServer = async () => {
     console.log(`   Health: ${BASE_URL}/health`);
     console.log(`   School API: ${BASE_URL}/api/school`);
     console.log(`   Cyber API: ${BASE_URL}/api/cyber`);
-    console.log(`   CORS Origins: ${allowedOrigins.join(', ')}`);
   });
 };
 
