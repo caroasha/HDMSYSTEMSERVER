@@ -11,7 +11,8 @@ const studentSchema = new mongoose.Schema({
   completionDate: { type: Date, required: true },
   computerAssigned: { type: String, default: null },
   feesPaid: { type: Number, default: 0 },
-  course: { type: String, required: true }, // e.g., "Web Development"
+  course: { type: String, required: true },
+  certificateNumber: { type: String, unique: true, sparse: true, default: null }, // NEW
   createdAt: { type: Date, default: Date.now }
 });
 

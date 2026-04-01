@@ -9,7 +9,6 @@ const dotenv = require('dotenv');
 const path = require('path');
 const { connectSchool, connectCyber } = require('./config/db');
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
@@ -19,7 +18,7 @@ const isProduction = process.env.NODE_ENV === 'production' || process.env.ENVIRO
 const PORT = process.env.PORT || 5000;
 const BASE_URL = process.env.BASE_URL || (isProduction ? 'https://hdmsystemserver.pxxl.click' : `http://localhost:${PORT}`);
 
-// CORS configuration – allow localhost for development and production domains
+// CORS configuration
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
@@ -31,16 +30,13 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl)
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) !== -1) {
       return callback(null, true);
     }
-    // Silently allow localhost without console warnings
     if (origin && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
       return callback(null, true);
     }
-    // For all other origins, deny silently (no console warning)
     return callback(null, false);
   },
   credentials: true,
@@ -89,7 +85,7 @@ app.get('/api', (req, res) => {
         base: '/api/school',
         endpoints: [
           '/auth', '/students', '/employees', '/fees',
-          '/accounts', '/inventory', '/portal', '/settings', '/applications'
+          '/accounts', '/inventory', '/portal', '/settings', '/applications', '/certificates'
         ]
       },
       cyber: {
@@ -158,6 +154,7 @@ const startServer = async () => {
   app.use('/api/school/portal', require('./routes/school/portal'));
   app.use('/api/school/settings', require('./routes/school/settings'));
   app.use('/api/school/applications', require('./routes/school/applications'));
+  app.use('/api/school/certificates', require('./routes/school/certificates')); // NEW
 
   // ==================== CYBER ROUTES ====================
   app.use('/api/cyber/auth', require('./routes/cyber/auth'));
